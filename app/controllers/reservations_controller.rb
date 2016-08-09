@@ -128,53 +128,47 @@ class ReservationsController < ApplicationController
     end
   end
 
-  def create # rubocop:disable all
+  def create
     @errors = cart.validate_all
-    notes = params[:reservation][:notes]
-    requested = !@errors.empty? && (cannot? :override, :reservation_errors)
+    creator = 
+      ReservationCreator.new(cart: cart, current_user: current_user,
+                             override: can?(:override, :reservation_errors),
+                             notes: params[:reservation][:notes])
 
-    # check for missing notes and validation errors
-    if !@errors.blank? && notes.blank?
-      # there were errors but they didn't fill out the notes
-      flash[:error] = 'Please give a short justification for this '\
-        "reservation #{requested ? 'request' : 'override'}"
-      @notes_required = true
-      if AppConfig.get(:request_text).empty?
-        @request_text = 'Please give a short justification for this '\
-          'equipment request.'
+    result = creator.create!
+    if result[:error]
+      case result[:error]
+      when 'needs notes'
+        flash[:error] = 'Please give a short justification for this reservation'
+        @notes_required = true
+        @request_text = if AppConfig.get(:request_text).empty?
+                          'Please give a short justification for this '\
+                          'equipment request.'
+                        else
+                          AppConfig.get(:request_text)
+                        end
+        render(:new) 
+        return
+      when 'requests disabled'
+        flash[:error] = 'Unable to create reservation'
+        render(:new) 
+        return
       else
-        @request_text = AppConfig.get(:request_text)
-      end
-      render(:new) && return
-    end
-
-    Reservation.transaction do
-      begin
-        start_date = cart.start_date
-        reserver = cart.reserver_id
-        notes = format_errors(@errors) + notes.to_s
-        if requested
-          flash[:notice] = cart.request_all(current_user,
-                                            params[:reservation][:notes])
-        else
-          flash[:notice] = cart.reserve_all(current_user,
-                                            params[:reservation][:notes])
-        end
-
-        if (cannot? :manage, Reservation) || (requested == true)
-          redirect_to(catalog_path) && return
-        end
-        if start_date == Time.zone.today
-          flash[:notice] += ' Are you simultaneously checking out equipment '\
-            'for someone? Note that only the reservation has been made. '\
-            'Don\'t forget to continue to checkout.'
-        end
-        redirect_to(manage_reservations_for_user_path(reserver)) && return
-      rescue ActiveRecord::RecordNotSaved, ActiveRecord::RecordInvalid => e
         redirect_to catalog_path, flash: { error: 'Oops, something went '\
-          "wrong with making your reservation.<br/> #{e.message}".html_safe }
-        raise ActiveRecord::Rollback
+          "wrong with making your reservation.<br/> #{error}".html_safe }
       end
+    else
+      flash[:notice] = result[:result]
+      if (cannot? :manage, Reservation) || creator.request?
+        redirect_to(catalog_path)
+        return
+      end
+      if cart.start_date == Time.zone.today
+        flash[:notice] += ' Are you simultaneously checking out equipment '\
+          'for someone? Note that only the reservation has been made. '\
+          'Don\'t forget to continue to checkout.'
+      end
+      redirect_to(manage_reservations_for_user_path(cart.reserver_id))
     end
   end
 

@@ -17,7 +17,8 @@ describe ReservationsController, type: :controller do
                           disable_user_emails: false,
                           override_on_create: false,
                           override_at_checkout: false,
-                          res_exp_time: false)
+                          res_exp_time: false,
+                          disable_requests: false)
     @cart = FactoryGirl.build(:cart, reserver_id: @user.id)
     sign_in @user
     @reservation = FactoryGirl.create(:valid_reservation, reserver: @user)

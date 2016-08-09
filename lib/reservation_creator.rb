@@ -10,7 +10,11 @@ class ReservationCreator
 
   def create!
     return { result: nil, error: error } if error
-    return reservation_transaction
+    reservation_transaction
+  end
+
+  def request?
+    !override && !cart_errors.blank? 
   end
 
   private
@@ -19,12 +23,8 @@ class ReservationCreator
 
   def error
     return 'requests disabled' if request? && AppConfig.check(:disable_requests)
-    return 'needs notes' if request? && !valid_request?
-    return 'needs notes' if override? && !valid_override?
-  end
-
-  def request?
-    !override && !cart_errors.blank? 
+    return 'needs notes' if (request? && !valid_request?) || 
+                              (override? && !valid_override?)
   end
 
   def valid_request?
