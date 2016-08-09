@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # some basic helpers to simulate devise controller methods in specs
 module ControllerHelpers
   def current_user
