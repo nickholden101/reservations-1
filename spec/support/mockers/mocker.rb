@@ -1,9 +1,10 @@
+# frozen_string_literal: true
 require 'rspec/mocks/standalone'
 
 class Mocker < RSpec::Mocks::InstanceVerifyingDouble
   include RSpec::Mocks
 
-  FIND_METHODS = [:find, :find_by_id]
+  FIND_METHODS = [:find, :find_by_id].freeze
 
   def initialize(traits: [], **attrs)
     # from RSpec::Mocks::ExampleMethods
@@ -14,7 +15,7 @@ class Mocker < RSpec::Mocks::InstanceVerifyingDouble
     end
     attrs ||= {}
     super(ref, attrs)
-    self.as_null_object
+    as_null_object
     process_traits(traits)
   end
 
@@ -41,7 +42,7 @@ class Mocker < RSpec::Mocks::InstanceVerifyingDouble
   def findable
     id = FactoryGirl.generate(:unique_id)
     allow(spy).to receive(:id).and_return(id)
-    FIND_METHODS.each do |method|
+    FIND_METHODS.each do |_method|
       allow(self.class.klass).to receive(:find)
       allow(self.class.klass).to receive(:find).with(id).and_return(spy)
       allow(self.class.klass).to receive(:find).with(id.to_s).and_return(spy)
