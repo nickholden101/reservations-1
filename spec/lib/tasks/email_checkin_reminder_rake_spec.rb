@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper'
 
 # see http://robots.thoughtbot.com/test-rake-tasks-like-a-boss

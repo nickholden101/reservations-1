@@ -47,7 +47,7 @@ def passed?
 end
 
 def rubocop(files)
-  "rubocop -Da --force-exclusion #{files}"
+  "rubocop -D --force-exclusion #{files}"
 end
 
 def eslint(files)

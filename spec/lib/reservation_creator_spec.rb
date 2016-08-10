@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'spec_helper'
 
 describe ReservationCreator do
@@ -33,12 +34,12 @@ describe ReservationCreator do
       end
     end
     context 'without errors' do
-      it_behaves_like 'successful create', cart: { validate_all: '' } 
+      it_behaves_like 'successful create', cart: { validate_all: '' }
     end
     context 'with errors' do
       context 'with notes' do
         it_behaves_like 'successful create', notes: 'note',
-                        cart: { validate_all: 'error' }
+                                             cart: { validate_all: 'error' }
       end
       context 'without notes' do
         it_behaves_like 'needs notes', cart: { validate_all: 'error' }

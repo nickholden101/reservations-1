@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # rubocop:disable ClassLength
 class ReservationsController < ApplicationController
   load_and_authorize_resource
@@ -130,50 +131,20 @@ class ReservationsController < ApplicationController
 
   def create
     # store information about the cart because it is purged if reservations
-    # are successful
+    # are successfully created
     @errors = cart.validate_all
     start_date = cart.start_date
     reserver_id = cart.reserver_id
-    creator = 
+    creator =
       ReservationCreator.new(cart: cart, current_user: current_user,
                              override: can?(:override, :reservation_errors),
                              notes: params[:reservation][:notes])
     result = creator.create!
-    messages = result[:result]
-    errors = result[:error]
-    if errors
-      case errors
-      when 'needs notes'
-        flash[:error] = 'Please give a short justification for this reservation'
-        @notes_required = true
-        @request_text = if AppConfig.get(:request_text).empty?
-                          'Please give a short justification for this '\
-                          'equipment request.'
-                        else
-                          AppConfig.get(:request_text)
-                        end
-        render(:new) 
-        return
-      when 'requests disabled'
-        flash[:error] = 'Unable to create reservation'
-        render(:new) 
-        return
-      else
-        redirect_to catalog_path, flash: { error: 'Oops, something went '\
-          "wrong with making your reservation.<br/> #{errors}".html_safe }
-      end
+    if result[:error]
+      handle_create_errors(result[:error])
     else
-      flash[:notice] = messages
-      if (cannot? :manage, Reservation) || creator.request?
-        redirect_to(catalog_path)
-        return
-      end
-      if start_date == Time.zone.today
-        flash[:notice] += ' Are you simultaneously checking out equipment '\
-          'for someone? Note that only the reservation has been made. '\
-          'Don\'t forget to continue to checkout.'
-      end
-      redirect_to(manage_reservations_for_user_path(reserver_id))
+      handle_create_success(result[:result], start_date, reserver_id,
+                            creator.request?)
     end
   end
 
@@ -508,6 +479,42 @@ class ReservationsController < ApplicationController
   end
 
   private
+
+  def handle_create_errors(errors)
+    case errors
+    when 'needs notes'
+      flash[:error] = 'Please give a short justification for this reservation'
+      @notes_required = true
+      @request_text = if AppConfig.get(:request_text).empty?
+                        'Please give a short justification for this '\
+                          'equipment request.'
+                      else
+                        AppConfig.get(:request_text)
+                      end
+      render(:new)
+    when 'requests disabled'
+      flash[:error] = 'Unable to create reservation'
+      render(:new)
+    else
+      redirect_to catalog_path,
+                  flash: { error: 'Oops, something went wrong with making '\
+                                  "your reservation.<br/> #{errors}".html_safe }
+    end
+  end
+
+  def handle_create_success(messages, start_date, reserver_id, requested)
+    flash[:notice] = messages
+    if can?(:manage, Reservation) && !requested
+      if start_date == Time.zone.today
+        flash[:notice] += ' Are you simultaneously checking out equipment '\
+          'for someone? Note that only the reservation has been made. '\
+          'Don\'t forget to continue to checkout.'
+      end
+      redirect_to(manage_reservations_for_user_path(reserver_id))
+    else
+      redirect_to(catalog_path)
+    end
+  end
 
   def reservation_params
     params.require(:reservation)

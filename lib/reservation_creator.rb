@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class ReservationCreator
   # Service Object to create reservations in the reservations controller
   def initialize(cart:, current_user:, override: false, notes: '')
@@ -14,7 +15,7 @@ class ReservationCreator
   end
 
   def request?
-    !override && !cart_errors.blank? 
+    !override && !cart_errors.blank?
   end
 
   private
@@ -23,8 +24,11 @@ class ReservationCreator
 
   def error
     return 'requests disabled' if request? && AppConfig.check(:disable_requests)
-    return 'needs notes' if (request? && !valid_request?) || 
-                              (override? && !valid_override?)
+    return 'needs notes' if needs_notes?
+  end
+
+  def needs_notes?
+    (request? && !valid_request?) || (override? && !valid_override?)
   end
 
   def valid_request?
@@ -32,7 +36,7 @@ class ReservationCreator
   end
 
   def override?
-    override && !cart_errors.blank? 
+    override && !cart_errors.blank?
   end
 
   def valid_override?
