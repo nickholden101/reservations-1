@@ -102,30 +102,24 @@ class ReservationsController < ApplicationController
   def show
   end
 
-  def new # rubocop:disable MethodLength
+  def new
     if cart.items.empty?
       flash[:error] = 'You need to add items to your cart before making a '\
         'reservation.'
       redirect_loc = (request.env['HTTP_REFERER'].present? ? :back : root_path)
       redirect_to redirect_loc
-    else
-      # error handling
-      @errors = cart.validate_all
-      unless @errors.empty?
-        if can? :override, :reservation_errors
-          flash[:error] = 'Are you sure you want to continue? Please review '\
-            'the errors below.'
-        else
-          flash[:error] = 'Please review the errors below. If uncorrected, '\
-            'any reservations with errors will be filed as a request, and '\
-            'subject to administrator approval.'
-        end
-      end
+      return
+    end
 
+    # error handling
+    @errors = cart.validate_all
+    if @errors.empty?
       # this is used to initialize each reservation later
       @reservation = Reservation.new(start_date: cart.start_date,
                                      due_date: cart.due_date,
                                      reserver_id: cart.reserver_id)
+    else
+      handle_new_reservation_errors
     end
   end
 
@@ -480,6 +474,22 @@ class ReservationsController < ApplicationController
 
   private
 
+  def handle_new_reservation_errors
+    if can? :override, :reservation_errors
+      flash[:error] = 'Are you sure you want to continue? Please review '\
+        'the errors below.'
+      render :new
+    elsif AppConfig.check(:disable_requests)
+      flash[:error] = 'Please review the errors below.'
+      render :requests_disabled
+    else
+      flash[:error] = 'Please review the errors below. If uncorrected, '\
+        'any reservations with errors will be filed as a request, and '\
+        'subject to administrator approval.'
+      render :new_request
+    end
+  end
+
   def handle_create_errors(errors)
     case errors
     when 'needs notes'
@@ -491,10 +501,10 @@ class ReservationsController < ApplicationController
                       else
                         AppConfig.get(:request_text)
                       end
-      render(:new)
+      render :new_request
     when 'requests disabled'
       flash[:error] = 'Unable to create reservation'
-      render(:new)
+      render :requests_disabled
     else
       redirect_to catalog_path,
                   flash: { error: 'Oops, something went wrong with making '\

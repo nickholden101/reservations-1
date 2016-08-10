@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class AppConfigsController < ApplicationController
   authorize_resource class: false
   skip_before_action :seen_app_configs, only: [:edit]
@@ -53,6 +54,7 @@ class AppConfigsController < ApplicationController
                   :checkout_persons_can_edit, :enable_renewals,
                   :override_on_create, :override_at_checkout, :require_phone,
                   :notify_admin_on_create, :disable_user_emails,
-                  :autodeactivate_on_archive, :requests_affect_availability)
+                  :autodeactivate_on_archive, :requests_affect_availability,
+                  :disable_requests)
   end
 end

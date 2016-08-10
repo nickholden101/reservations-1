@@ -321,7 +321,7 @@ describe ReservationsController, type: :controller do
           post :create, reservation: { id: 1 }
         end
         it { is_expected.to set_flash[:error] }
-        it { is_expected.to render_template(:new) }
+        it { is_expected.to render_template(:new_request) }
       end
       context 'requests disabled' do
         before do
@@ -333,7 +333,7 @@ describe ReservationsController, type: :controller do
           post :create, reservation: { id: 1 }
         end
         it { is_expected.to set_flash[:error] }
-        it { is_expected.to render_template(:new) }
+        it { is_expected.to render_template(:requests_disabled) }
       end
       context 'other error' do
         before do
