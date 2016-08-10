@@ -129,15 +129,20 @@ class ReservationsController < ApplicationController
   end
 
   def create
+    # store information about the cart because it is purged if reservations
+    # are successful
     @errors = cart.validate_all
+    start_date = cart.start_date
+    reserver_id = cart.reserver_id
     creator = 
       ReservationCreator.new(cart: cart, current_user: current_user,
                              override: can?(:override, :reservation_errors),
                              notes: params[:reservation][:notes])
-
     result = creator.create!
-    if result[:error]
-      case result[:error]
+    messages = result[:result]
+    errors = result[:error]
+    if errors
+      case errors
       when 'needs notes'
         flash[:error] = 'Please give a short justification for this reservation'
         @notes_required = true
@@ -155,20 +160,20 @@ class ReservationsController < ApplicationController
         return
       else
         redirect_to catalog_path, flash: { error: 'Oops, something went '\
-          "wrong with making your reservation.<br/> #{error}".html_safe }
+          "wrong with making your reservation.<br/> #{errors}".html_safe }
       end
     else
-      flash[:notice] = result[:result]
+      flash[:notice] = messages
       if (cannot? :manage, Reservation) || creator.request?
         redirect_to(catalog_path)
         return
       end
-      if cart.start_date == Time.zone.today
+      if start_date == Time.zone.today
         flash[:notice] += ' Are you simultaneously checking out equipment '\
           'for someone? Note that only the reservation has been made. '\
           'Don\'t forget to continue to checkout.'
       end
-      redirect_to(manage_reservations_for_user_path(cart.reserver_id))
+      redirect_to(manage_reservations_for_user_path(reserver_id))
     end
   end
 

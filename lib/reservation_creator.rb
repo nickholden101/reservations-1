@@ -40,15 +40,17 @@ class ReservationCreator
   end
 
   def reservation_transaction
+    result = {}
     Reservation.transaction do
       begin
         create_method = request? ? :request_all : :reserve_all
-        return { result: cart.send(create_method, current_user, notes),
-                 error: nil }
+        cart_result = cart.send(create_method, current_user, notes)
+        result = { result: cart_result, error: nil }
       rescue ActiveRecord::RecordNotSaved, ActiveRecord::RecordInvalid => e
+        result = { result: nil, error: e.message }
         raise ActiveRecord::Rollback
-        return { result: nil, error: e.message }
       end
     end
+    result
   end
 end
