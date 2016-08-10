@@ -6,7 +6,8 @@ describe 'email_checkin_reminder' do
 
   before(:each) do
     @ac = mock_app_config(admin_email: 'admin@email.com',
-                          disable_user_emails: false)
+                          disable_user_emails: false,
+                          upcoming_checkin_email_body: nil)
     @upcoming = FactoryGirl.create(:checked_out_reservation,
                                    due_date: Time.zone.today)
     @not_upcoming = FactoryGirl.create(:valid_reservation,

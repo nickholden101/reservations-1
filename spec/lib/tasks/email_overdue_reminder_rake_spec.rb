@@ -6,7 +6,8 @@ describe 'email_overdue_reminder' do
 
   before(:each) do
     @ac = mock_app_config(admin_email: 'admin@email.com',
-                          disable_user_emails: false)
+                          disable_user_emails: false,
+                          overdue_checkin_email_body: nil)
     @overdue = FactoryGirl.build(:overdue_reservation)
     @overdue.save(validate: false)
     @not_overdue = FactoryGirl.create(:checked_out_reservation)

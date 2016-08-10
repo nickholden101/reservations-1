@@ -26,5 +26,6 @@ FactoryGirl.define do
     notify_admin_on_create false
     checkout_persons_can_edit false
     request_text 'tell me whyyy?'
+    disable_requests false
   end
 end

@@ -6,7 +6,8 @@ describe 'email_missed_reservations' do
 
   before(:each) do
     mock_app_config(admin_email: 'admin@email.com', disable_user_emails: false,
-                    send_notifications_for_deleted_missed_reservations: true)
+                    send_notifications_for_deleted_missed_reservations: true,
+                    deleted_missed_reservation_email_body: nil)
     @missed = FactoryGirl.create(:missed_reservation,
                                  start_date: Time.zone.today - 2.days,
                                  due_date: Time.zone.today - 1.day)
